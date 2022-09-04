@@ -1,23 +1,21 @@
 # 1D Time Domain Convolution
 
-In this project our main goal is to exploit parallelism, create a custom circuit, implement it on the zed board, and interface them in different operating frequencies. The project work is divided into two parts. In one
-part, the main objective is to develop a DRAM read interface (address generator, FIFO, and control interface) and in another part to design a user app (signal buffer, kernel buffer). DRAM read entity
-runs on two clock domains (DRAM clock and User clock domain) and user app runs on user clock domain. These two in different frequency have been interfaced, and the DRAM read interface is used to send data to the user app from read memory. User app sends convolution results to DRAM write
-interface.
+In this project our main goal is to exploit parallelism, create a custom circuit, implement it on the zed board, and interface them in different operating frequencies. The project work is divided into two parts. In one part, the main objective is to develop a DRAM read interface (address generator, FIFO, and control interface) and in another part to design a user app (signal buffer, kernel buffer). DRAM read entity runs on two clock domains (DRAM clock and User clock domain) and user app runs on user clock domain. These two in different frequency have been interfaced, and the DRAM read interface is used to send data to the user app from read memory. User app sends convolution results to DRAM write interface.
 
 Part 1: DRAM DMA Interface
 
 The DMA read interface has been created to read signal input data from DRAM into the convolution pipeline and for that, an address generator, a FIFO, a DMA controller, handshake between two clock domain and a DMA interface to interact with other DMA components
 have been created. 
 
-	1. Controller : It controls the registers storing size and start address. When Go signal is asserted, this value is passed through handshake to enable the size and address registers in the address generator. When the address generator receives the go
-signal, it means that the size and start address it receives from the user clock domain is valid and the address generator starts its counter to generate addresses for reading data from DRAM.
+	1. Controller : It controls the registers storing size and start address. When Go signal is asserted, this value is passed through handshake to enable the size and address registers in the address generator. When the address generator receives the go signal, it means that the size and start address it receives from the user clock domain is valid and the address generator starts its counter to generate addresses for reading data from DRAM.
+	
 	2. Handshake : It creates a handshaking of the go signal from the user clock domain to the DRAM clock domain.
+	
 	3. FIFO : This FIFO receives data from DRAM located in DRAM clock domain and sends data to user app located in user clock domain. It is generated from Vivado.
-	4. Address Generator : We have created an FSM for address generator that receives total number of size and start address from user app for which the address generator starts generating addresses. The size it receives is corresponding to 16-bit data of memory. But the
-generated address corresponds to 32-bit data of RAM. So, the FSM will divide the given sizein half (if size is even) or ceil of half (if size is odd). After receiving the go signal from the handshake, the address generator generates address. When go=1, it flushes all its data if has
-any. After that dram_rd_en and dram_ready signals are asserted, and the generated address are sent to the dram_read_addr. However, in case FIFO is full and the address generator already generated some address, data will be read from RAM for the extra addresses and
-those data will be lost. To avoid this issue a programmable full signal is used in our project which gets asserted when FIFO is full to the threshold given for programmable full flag which is 48 entries
+	
+	4. Address Generator : We have created an FSM for address generator that receives total number of size and start address from user app for which the address generator starts generating addresses. The size it receives is corresponding to 16-bit data of memory. But the generated address corresponds to 32-bit data of RAM. So, the FSM will divide the given sizein half (if size is even) or ceil of half (if size is odd). After receiving the go signal from the handshake, the address generator generates address. When go=1, it flushes all its data if has any. After that dram_rd_en and dram_ready signals are asserted, and the generated address are sent to the dram_read_addr. However, in case FIFO is full and the address generator already generated some address, data will be read from RAM for the extra addresses and
+those data will be lost. To avoid this issue a programmable full signal is used in our project which gets asserted when FIFO is full to the threshold given for programmable full flag which is 48 entries.
+
 	5. Counter :  To ensure the assertion of done signal, a counter is placed in the user clock domain. When rd_en = 1 and FIFO is not empty it counts to ‘size’ and when it reaches to size done signal is asserted.
 
 Part 2: User app
