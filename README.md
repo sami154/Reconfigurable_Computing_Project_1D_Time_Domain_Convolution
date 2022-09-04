@@ -1,1 +1,1 @@
-# Reconfigurable_Computing_Project_1D_Time_Domain_Convolution
+# 1D Time Domain Convolution
